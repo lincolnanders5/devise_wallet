@@ -3,10 +3,10 @@ module ActionDispatch::Routing
     protected
       def devise_wallet_authentication(mapping, controllers) #:nodoc:
 
-        resources :wallet_authentications,
+        resources :wallet_authentication,
                   :only => [:new, :create, :show],
-                  :controller => controllers[:wallet_authable],
-                  :module => controllers[:wallet_authable] ? nil : 'devise'
+                  :controller => controllers[:wallet_authentication],
+                  :module => controllers[:wallet_authentication] ? nil : 'devise'
       end
   end
 end

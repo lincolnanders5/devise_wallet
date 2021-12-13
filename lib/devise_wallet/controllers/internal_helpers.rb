@@ -21,18 +21,18 @@ module DeviseWallet
         end
       end
 
-      # Handles wallet flash messages by adding a cascade. The default messages
+      # Handles wallet_authentication flash messages by adding a cascade. The default messages
       # are always in the controller namespace:
       #
       #   en:
       #     devise:
       #       wallet_authable:
-      #         success: 'Successfully authorized from your wallet.'
-      #         failure: 'Unable to authorize you from your wallet.'
+      #         success: 'Successfully authorized from your wallet_authentication.'
+      #         failure: 'Unable to authorize you from your wallet_authentication.'
       #
       #       wallet_permissions_authable:
-      #         success: 'Successfully authorized from your wallet.'
-      #         failure: 'Unable to authorize you from your wallet.'
+      #         success: 'Successfully authorized from your wallet_authentication.'
+      #         failure: 'Unable to authorize you from your wallet_authentication.'
       #
       # But they can also be nested by Devise scope:
       #
@@ -40,18 +40,18 @@ module DeviseWallet
       #     devise:
       #       wallet_authable:
       #         admin:
-      #           sucess: 'Hello admin! You're successfully authorized from your wallet.'
-      #           failure: 'Sorry admin. Unable to authorize you from your wallet.'
+      #           sucess: 'Hello admin! You're successfully authorized from your wallet_authentication.'
+      #           failure: 'Sorry admin. Unable to authorize you from your wallet_authentication.'
       #       wallet_permissions_authable:
       #         admin:
-      #           success: 'Hello admin! You're successfully authorized from your wallet.'
-      #           failure: 'Sorry admin. Unable to authorize you from your wallet.'
+      #           success: 'Hello admin! You're successfully authorized from your wallet_authentication.'
+      #           failure: 'Sorry admin. Unable to authorize you from your wallet_authentication.'
       #
       # If you customize your controllers by inheriting
       # Devise::WalletPermissionsAuthable or Devise::WalletAuthable
       # don't forget to change your translation key from
-      # 'wallet_permissions_authable' => 'your wallet permissions controller' and
-      # 'wallet_authable' => 'your wallet authable controller'
+      # 'wallet_permissions_authable' => 'your wallet_authentication permissions controller' and
+      # 'wallet_authable' => 'your wallet_authentication authable controller'
       #
       def set_wallet_flash_message(key, type, options={})
         set_flash_message(key, type, options)

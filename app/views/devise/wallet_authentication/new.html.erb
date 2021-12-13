@@ -1,0 +1,104 @@
+<script src='https://cdn.ethers.io/lib/ethers-5.2.umd.min.js' type="application/javascript"></script>
+<script>
+    // SSH-keygen Styled Art Script - Lincoln Anders 2021
+    // inspired by https://blog.benjojo.co.uk/post/ssh-randomart-how-does-it-work-art
+
+    // Generate 2D array of `y` arrays of `x` elements, populated with `val`.
+    const _arr = (x, y, val = undefined) =>
+      new Array(x).fill(undefined).map(item => (new Array(y).fill(undefined)))
+        .map(row => row.map(value => value = 0));
+
+    function generateArtFromNonce() {
+        const hexChunks = nonce.match(/.{1,10}/g).map(i => parseInt(i, 16));
+        const binString = hexChunks.map(i => i.toString(2)).join("");
+        const directions = binString.match(/.{1,2}/g);
+
+        const dims  = { x: 8, y: 20 };
+        const opts  = " ▁▂▃▄▅▆▇█▀▉▊▋▌▍▎▏";
+        let board   = _arr(dims.x, dims.y, 0);
+        let pos     = { x: dims.x / 2, y: dims.y / 2 };
+        directions.forEach(dir => {
+            // dir directions:  00 ↖ ↗ 01
+            // [high][low]      10 ↙ ↘ 11
+            const high = dir[0] === '1', low = dir[1] === '1';
+            high ? pos.y++ : pos.y--;
+            low  ? pos.x++ : pos.x--;
+            pos = { x : bounded(pos.x, 1, dims.x - 1),
+                    y : bounded(pos.y, 1, dims.y - 1) };
+            incBoardAtPos(board, pos.x, pos.y);
+        });
+        board = board.map(row => row.map(value => opts[value]));
+        return boardToString(board);
+    }
+    function bounded(val, min, max) {
+        if (min <= val && val <= max) return val;
+        if (min >= val) return min;
+        return max;
+    }
+    const incBoardAtPos = (board, x, y) => { board[x][y] += 1; }
+    const boardToString = board => board.map(row => row.join("")).join("\n");
+</script>
+<script>
+    let provider, walletAddress;
+    async function getWalletAddress(providerName) {
+        try {
+            console.log("Getting wallet address...");
+            switch (providerName) { case 'metamask': break; default: return; }
+
+            provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+            await provider.send("eth_requestAccounts", []);
+            const signer = provider.getSigner();
+            walletAddress = await signer.getAddress();
+            console.log("address:", walletAddress);
+        } catch (error) { connectionErrorHandler(error); }
+    }
+
+    const nonce = "<%= @nonce %>";
+    async function signNonce() {
+        try {
+            const signer = provider.getSigner();
+            console.log("Signing nonce", nonce);
+            signature = await signer.signMessage(nonce);
+        } catch (error) { connectionErrorHandler(error); }
+    }
+
+    function promptTipPayment() {
+        const amt = document.querySelector("input#tip-amount").value;
+        tip(amt);
+    }
+
+    async function tip(amount, address = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266") {
+        if (provider === undefined) return console.error("Provider uninitialized when tipping.");
+
+        const signer = provider.getSigner();
+        const etherVal = ethers.utils.parseEther(amount.toString())
+        const tx = signer.sendTransaction({ to: address, value: etherVal });
+        await tx.catch(connectionErrorHandler);
+    }
+
+    function connectionErrorHandler(error) {
+        if (error.hasOwnProperty('code')) {
+            var code = error.code;
+            if (code === 4001) return console.error("CEH_CODE", "User cancelled wallet authentication.");
+            else if (code === "INSUFFICIENT_FUNDS") return console.error("CEH_CODE", "Insufficient funds to cover cost of transaction.");
+            else console.log("Uncaught code", code);
+        }
+        if (error.hasOwnProperty('message')) return console.error("CEH_MSG", error.message);
+    }
+</script>
+
+<p>Authenticate with your wallet</p>
+<button onclick="getWalletAddress('metamask')">Authorize</button>
+
+<div style="width:200px;">
+  <input id="tip-amount" type="number" min="0.001" value="0.002" width="80px"></input>
+  <button onclick="promptTipPayment()">Tip Creator :)</button>
+</div>
+
+<script>
+    (async () => {
+        await getWalletAddress('metamask');
+        generateArtFromNonce();
+        //signNonce();
+    })();
+</script>

@@ -1,5 +1,6 @@
 class Devise::WalletAuthentication < ActiveRecord::Base
-  attr_accessor :callback_url
+  attr_accessor :public_address
+  attr_accessor :wallet_nonce
 
   serialize :params
 

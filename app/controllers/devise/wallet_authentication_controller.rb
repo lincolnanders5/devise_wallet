@@ -1,9 +1,12 @@
+require 'securerandom'
+
 class Devise::WalletAuthenticationController < ApplicationController
-  include Devise::Controllers::InternalHelpers
+  include Devise::Controllers::Helpers
   include DeviseWallet::Controllers::InternalHelpers
 
   # GET /resource/wallet_authentications/new
   def new
+    @nonce = SecureRandom.hex(10) + SecureRandom.hex(10) + SecureRandom.hex(10)
   end
 
   # POST /resource/wallet_authentications
