@@ -1,0 +1,14 @@
+
+===============================================================================
+
+Some setup you must do manually if you haven't already:
+
+  1. Generate devise_wallet initializer
+
+       rails g devise_wallet:install
+
+  3. Edit config/initializers/devise_wallet.rb
+     For more info see: http://github.com/lincolnanders5/devise_wallet
+
+===============================================================================
+

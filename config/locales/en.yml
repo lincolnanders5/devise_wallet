@@ -1,0 +1,5 @@
+en:
+  devise:
+    wallet_authentications:
+      something_went_wrong_when_contacting_wallet: "Sorry something went wrong when contacting you wallet. Please try again in a few minutes."
+
