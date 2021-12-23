@@ -35,6 +35,6 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/lincol
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
 
-[ether-js]:https://docs.ethers.io/v5/
+[ethers-js]:https://docs.ethers.io/v5/
 [metamask-login]: https://www.toptal.com/ethereum/one-click-login-flows-a-metamask-tutorial
 [ssh-art]: https://blog.benjojo.co.uk/post/ssh-randomart-how-does-it-work-art 
