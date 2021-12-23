@@ -5,16 +5,21 @@
 
     // Generate 2D array of `y` arrays of `x` elements, populated with `val`.
     const _arr = (x, y, val = undefined) =>
-      new Array(x).fill(undefined).map(item => (new Array(y).fill(undefined)))
-        .map(row => row.map(value => value = 0));
-
-    function generateArtFromNonce() {
-        const hexChunks = nonce.match(/.{1,10}/g).map(i => parseInt(i, 16));
+      new Array(x).fill(undefined)
+                  .map(item => new Array(y).fill(undefined))
+                  .map(row => row.map(value => value = 0));
+    const bounded = (val, min, max) =>
+      (min <= val && val <= max) ? val : ((min >= val) ? min : max);
+    const incBoardAtPos = (board, x, y) => { board[x][y] += 1; }
+    const boardToString = board => board.map(row => row.join("")).join("\n");
+    const __dw_fill_chars  = "_▁▂▃▄▅▆▇█▀▉▊▋▌▍▎▏";
+    // const __dw_fill_chars  = "#.o+=*BOX@%&#/^"
+    function generateArtFromInt(int, fillChars = __dw_fill_chars) {
+        const hexChunks = int.match(/.{1,10}/g).map(i => parseInt(i, 16));
         const binString = hexChunks.map(i => i.toString(2)).join("");
         const directions = binString.match(/.{1,2}/g);
 
-        const dims  = { x: 8, y: 20 };
-        const opts  = " ▁▂▃▄▅▆▇█▀▉▊▋▌▍▎▏";
+        const dims  = { x: 4, y: 20 };
         let board   = _arr(dims.x, dims.y, 0);
         let pos     = { x: dims.x / 2, y: dims.y / 2 };
         directions.forEach(dir => {
@@ -22,21 +27,35 @@
             // [high][low]      10 ↙ ↘ 11
             const high = dir[0] === '1', low = dir[1] === '1';
             high ? pos.y++ : pos.y--;
-            low  ? pos.x++ : pos.x--;
-            pos = { x : bounded(pos.x, 1, dims.x - 1),
-                    y : bounded(pos.y, 1, dims.y - 1) };
+            low  ? pos.x++: pos.x--;
+            pos = { x : bounded(pos.x, 0, dims.x - 1),
+                    y : bounded(pos.y, 0, dims.y - 1) };
             incBoardAtPos(board, pos.x, pos.y);
         });
-        board = board.map(row => row.map(value => opts[value]));
+        board = board.map(row => row.map(value => fillChars[value]));
+        const nonceCheck = decodeBoardIntoInt(board);
+        console.log("NONCECHECK/TF", nonceCheck, nonceCheck == nonce);
         return boardToString(board);
     }
-    function bounded(val, min, max) {
-        if (min <= val && val <= max) return val;
-        if (min >= val) return min;
-        return max;
+    function decodeBoardIntoInt(board, fillChars = __dw_fill_chars) {
+        const intBoard = board.map(row => row.map(value => fillChars.indexOf(value)));
+        let   pos = { x : intBoard.length / 2, y : intBoard[0].length / 2 };
+        let   bitStr = "";
+        console.log(neighborValues(board, 0, 0))
+        console.log(neighborValues(board, 1, 1))
+        console.log(neighborValues(board, 1, 10))
+        console.log(neighborValues(board, 2, 10))
+        return intBoard;
     }
-    const incBoardAtPos = (board, x, y) => { board[x][y] += 1; }
-    const boardToString = board => board.map(row => row.join("")).join("\n");
+    function neighborValues(board, x, y) {
+        let validNeighbors = [];
+        for (let rowOffset = -1; rowOffset <= 1; rowOffset++)
+            for (let colOffset = -1; colOffset <= 1; colOffset++)
+                if (bounded(x + colOffset, 0, board[0].length - 1) === (x + colOffset) && bounded(y + rowOffset, 0, board.length - 1) === (y + rowOffset))
+                    validNeighbors.push([x + colOffset, y + rowOffset]);
+        const neigh = new Set(validNeighbors);
+        return neigh
+    }
 </script>
 <script>
     let provider, walletAddress;
@@ -49,16 +68,18 @@
             await provider.send("eth_requestAccounts", []);
             const signer = provider.getSigner();
             walletAddress = await signer.getAddress();
-            console.log("address:", walletAddress);
+            return true;
         } catch (error) { connectionErrorHandler(error); }
+        return false;
     }
 
     const nonce = "<%= @nonce %>";
+    const artMessage = generateArtFromInt(nonce);
     async function signNonce() {
         try {
             const signer = provider.getSigner();
-            console.log("Signing nonce", nonce);
-            signature = await signer.signMessage(nonce);
+            const signature = await signer.signMessage(artMessage);
+            console.log("Nonce Art Signature", signature);
         } catch (error) { connectionErrorHandler(error); }
     }
 
@@ -78,7 +99,7 @@
 
     function connectionErrorHandler(error) {
         if (error.hasOwnProperty('code')) {
-            var code = error.code;
+            const code = error.code;
             if (code === 4001) return console.error("CEH_CODE", "User cancelled wallet authentication.");
             else if (code === "INSUFFICIENT_FUNDS") return console.error("CEH_CODE", "Insufficient funds to cover cost of transaction.");
             else console.log("Uncaught code", code);
@@ -87,18 +108,65 @@
     }
 </script>
 
-<p>Authenticate with your wallet</p>
-<button onclick="getWalletAddress('metamask')">Authorize</button>
-
-<div style="width:200px;">
-  <input id="tip-amount" type="number" min="0.001" value="0.002" width="80px"></input>
-  <button onclick="promptTipPayment()">Tip Creator :)</button>
+<h1>Sign In With Crypto Wallet</h1>
+<div id="permissions-list-prompt" class="step" data-step="1">
+    <p>Would you like to allow <b><%= @devise_wallet_app_name %></b> to access:</p>
+    <ul>
+        <li>Your wallet public address</li>
+    </ul>
+    <button onclick="getWalletAddress('metamask')">Allow</button>
+    <button>Deny</button>
 </div>
 
+<div id="art-verification-prompt" class="step" data-step="2">
+    <p>
+      To authorize with <b><%= @devise_wallet_app_name %></b>, you will be
+      asked to verify a message containing the following randomly generated art:
+    </p>
+    <code id="art-container" style="font-family: monospace"></code>
+    <p>
+      To verify your account, you will be asked to sign a message containing
+      this art. Your wallet will be used to uniquely sign this message.
+    </p>
+    <button onclick="signNonce()">Verify Account</button>
+
+    <script>document.querySelector("#art-container").innerText = artMessage;</script>
+</div>
+
+<!--<div style="width:200px;">-->
+<!--  <input id="tip-amount" type="number" min="0.001" value="0.002" width="80px"></input>-->
+<!--  <button onclick="promptTipPayment()">Tip Creator :)</button>-->
+<!--</div>-->
+
+<script>
+    const hide = elem => elem.style.display = 'none';
+    const show = elem => elem.style.display = '';
+    var __step_index = 1;
+    const incStep = (count) => {
+        __step_index += count;
+        Object.entries(stepLookupDict()).forEach(([index, element]) => {
+            __step_index == index ? show(element) : hide(element);
+        });
+    }
+    var __lookup_dict = {};
+    const stepLookupDict = () => {
+        // if (__lookup_dict !== {}) return __lookup_dict;
+        const allSteps = Array.from(document.querySelectorAll(".step"));
+        const stepDictArr = allSteps.map(elem => {
+            const stepKey = elem.getAttribute("data-step");
+            return { [stepKey] : elem };
+        });
+        __lookup_dict = stepDictArr.reduce((aggDict, curDict) => {
+            const [index, elem] = Object.entries(curDict)[0];
+            aggDict[index] = elem;
+            return aggDict;
+        }, {})
+        return __lookup_dict;
+    }
+    incStep(0);
+</script>
 <script>
     (async () => {
-        await getWalletAddress('metamask');
-        generateArtFromNonce();
-        //signNonce();
+        await getWalletAddress('metamask') ? incStep(1) : incStep(0);
     })();
 </script>

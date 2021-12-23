@@ -6,7 +6,9 @@ class Devise::WalletAuthenticationController < ApplicationController
 
   # GET /resource/wallet_authentications/new
   def new
-    @nonce = SecureRandom.hex(10) + SecureRandom.hex(10) + SecureRandom.hex(10)
+    session[:wallet_nonce] ||= SecureRandom.hex(10) + SecureRandom.hex(10) + SecureRandom.hex(10)
+    @nonce = session[:wallet_nonce]
+    @devise_wallet_app_name = ENV.fetch("DEVISE_WALLET_APP_NAME") { "TODO: Set DEVISE_WALLET_APP_NAME" }
   end
 
   # POST /resource/wallet_authentications
